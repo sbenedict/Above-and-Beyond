@@ -157,13 +157,24 @@ onEvent('item.tags', event => {
 	event.get('thermal:crafting/dies').add('#forge:profession_cards')
 	event.get('thermal:crafting/casts').add(KJ("three_cast")).add(KJ("eight_cast")).add(KJ("plus_cast")).add(KJ("minus_cast")).add(KJ("multiply_cast")).add(KJ("divide_cast")).add(F("#circuit_press"))
 
+	const paintball = (color) => AE2(color + "_paint_ball");
 	event.get('create:upright_on_belt')
-		.add(AE2("red_paint_ball"))
-		.add(AE2("yellow_paint_ball"))
-		.add(AE2("green_paint_ball"))
-		.add(AE2("blue_paint_ball"))
-		.add(AE2("magenta_paint_ball"))
-		.add(AE2("black_paint_ball"))
+		.add(paintball("red"))
+		.add(paintball("yellow"))
+		.add(paintball("green"))
+		.add(paintball("blue"))
+		.add(paintball("magenta"))
+		.add(paintball("black"))
+		.add(paintball("white"))
+		.add(paintball("gray"))
+		.add(paintball("light_gray"))
+		.add(paintball("light_blue"))
+		.add(paintball("cyan"))
+		.add(paintball("orange"))
+		.add(paintball("brown"))
+		.add(paintball("pink"))
+		.add(paintball("lime"))
+		.add(paintball("purple"))
 
 	event.get('randomium:blacklist')
 		.add(/.*creative.*/)
@@ -1938,24 +1949,52 @@ function invarMachine(event) {
 
 	event.recipes.createCrushing([Item.of(AE2("singularity")).withChance(1)], CR('crushing_wheel')).processingTime(250)
 
-	let dyes = [MC('orange_dye'), MC('magenta_dye'), MC('light_blue_dye'), MC('yellow_dye'), MC('lime_dye'), MC('pink_dye'), MC('cyan_dye'), MC('purple_dye'), MC('blue_dye'), MC('brown_dye'), MC('green_dye'), MC('red_dye')]
+	const paintball = (color) => AE2(color + "_paint_ball");
+	const dyes = [MC('orange_dye'), MC('magenta_dye'), MC('light_blue_dye'), MC('yellow_dye'), MC('lime_dye'), MC('pink_dye'), MC('cyan_dye'), MC('purple_dye'), MC('blue_dye'), MC('brown_dye'), MC('green_dye'), MC('red_dye')]
 	event.recipes.createCompacting('1x ' + KJ("dye_entangled_singularity"), [dyes, Item.of(AE2('quantum_entangled_singularity'), 1)])
 	event.recipes.createConversion([AE2('quantum_entangled_singularity')], AE2("singularity"))
 	event.recipes.createCrushing([
-		Item.of(AE2("red_paint_ball"), 1).withChance(.90),
-		Item.of(AE2("yellow_paint_ball"), 1).withChance(.80),
-		Item.of(AE2("green_paint_ball"), 1).withChance(.70),
-		Item.of(AE2("blue_paint_ball"), 1).withChance(.60),
-		Item.of(AE2("magenta_paint_ball"), 1).withChance(.50)],
+		Item.of(paintball("red"), 1).withChance(.90),
+		Item.of(paintball("yellow"), 1).withChance(.80),
+		Item.of(paintball("green"), 1).withChance(.70),
+		Item.of(paintball("blue"), 1).withChance(.60),
+		Item.of(paintball("magenta"), 1).withChance(.50)],
 		KJ('dye_entangled_singularity')).processingTime(50)
 
-	let colors = ["red", "yellow", "green", "blue", "magenta", "black"]
-	for (let index = 0; index < colors.length; index++) {
-		var element = colors[index];
-		if (index == colors.length - 1)
-			continue;
-		event.recipes.createEmptying([AE2(colors[index + 1] + '_paint_ball'), Fluid.of(TC('molten_ender'), 250)], AE2(element + '_paint_ball'))
+	const colors = ["red", "yellow", "green", "blue", "magenta", "black"]
+	for (let index = 0; index < colors.length - 1; index++) {
+		let element = index;
+		event.recipes.createEmptying([paintball(colors[element + 1]), Fluid.of(TC('molten_ender'), 250)], paintball(colors[element]))
 	}
+
+	const colorCompacting = (result, ingreds) => {
+		event.recipes.createCompacting(Item.of(paintball(result), 2), ingreds.map(paintball));
+	}
+
+	colorCompacting("orange",       ["red",         "yellow"]);
+	colorCompacting("cyan",         ["blue",        "green" ]);
+	colorCompacting("purple",       ["blue",        "red"   ]);
+	colorCompacting("pink",         ["red",         "white" ]);
+	colorCompacting("light_blue",   ["blue",        "white" ]);
+	colorCompacting("lime",         ["green",       "white" ]);
+	colorCompacting("gray",         ["black",       "white" ]);
+	colorCompacting("light_gray",   ["gray",        "white" ]);
+	colorCompacting("brown",        ["red",         "green" ]);
+	colorCompacting("brown",        ["green",       "yellow"]);
+	colorCompacting("brown",        ["orange",      "black" ]);
+	colorCompacting("red",          ["pink",        "black" ]); // When should I stop?
+	colorCompacting("blue",         ["light_blue",  "black" ]);
+	colorCompacting("green",        ["lime",        "black" ]);
+
+	const otherColors = ["white", "orange", "cyan", "lime", "light_blue", "pink", "purple", "brown", "gray", "light_gray"];
+	otherColors.forEach(color => {
+		donutCraft(event, Item.of(paintball(color), 8), MC(color + '_dye'), paintball("black"));
+		// Why u no stack paint balls?
+		//event.recipes.createMixing(Item.of(paintball(color), 8), [Item.of(paintball("black"), 8), MC(color + "_dye")]);
+		let dye = Item.of(MC(color + "_dye")).ignoreNBT();
+		event.recipes.createMixing(Item.of(paintball(color), 1), [paintball("black"), dye])
+			.damageItem(dye);
+	});
 
 	event.recipes.createMechanicalCrafting(CR('chromatic_compound'), [
 		'AA',
@@ -1981,14 +2020,7 @@ function invarMachine(event) {
 		.id('kubejs:inductive_mechanism')
 
 	event.remove({ output: TE('machine_frame') })
-	event.shaped(TE('machine_frame'), [
-		'SSS',
-		'SCS',
-		'SSS'
-	], {
-		C: KJ('invar_casing'),
-		S: KJ('inductive_mechanism')
-	})
+	donutCraft(event, TE('machine_frame'), KJ('invar_casing'), KJ('inductive_mechanism'))
 
 	event.shaped(KJ('chromatic_resonator'), [
 		' R ',
